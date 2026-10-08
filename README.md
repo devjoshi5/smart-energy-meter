@@ -1,4 +1,4 @@
-# Smart Energy Meter ⚡
+<img width="625" height="1037" alt="image" src="https://github.com/user-attachments/assets/c36b5643-c55a-431f-b7f2-dddf7f219c48" /># Smart Energy Meter ⚡
 
 IoT-based energy meter that measures voltage and current, computes power and consumption, and shows live data on a Blynk dashboard, with ESP32-CAM surveillance.
 
@@ -6,7 +6,6 @@ IoT-based energy meter that measures voltage and current, computes power and con
 - Current sensing with SCT-013 and voltage sensing with ZMPT101B
 - Live monitoring on the Blynk app
 - Surveillance with ESP32-CAM
-- [Add: power/energy calculation, alerts, etc. only if you built them]
 
 ## Hardware
 | Component | Purpose |
@@ -26,10 +25,10 @@ Sensors → ESP32 (ADC sampling, RMS calculation) → Wi-Fi → Blynk Cloud → 
 4. Upload `src/main.ino`
 
 ## Results
-![Dashboard](images/dashboard.png)
-![Hardware](images/hardware.jpg)
+![Dashboard](<img width="625" height="1037" alt="image" src="https://github.com/user-attachments/assets/faf2665d-f57f-403a-8149-395b29203ad8" />
+)
+![Hardware](<img width="1280" height="730" alt="WhatsApp Image 2026-08-02 at 10 33 02 AM" src="https://github.com/user-attachments/assets/a33c92dc-ee47-4107-8174-be5368648166" />
+)
 
-## Learnings / Future work
-- [Calibration challenges, accuracy, what you'd improve]
 
 *Developed Dec 2024 to May 2025 as my B.Tech final-year project.*
