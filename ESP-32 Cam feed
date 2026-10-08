@@ -1,0 +1,80 @@
+from flask import Flask, request, Response, send_file
+import os
+from datetime import datetime, timedelta
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.oauth2 import service_account
+from threading import Lock
+
+app = Flask(_name_)
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
+SERVICE_ACCOUNT_FILE = 'credentials.json'
+
+creds = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+drive_service = build('drive', 'v3', credentials=creds)
+
+latest_image_path = os.path.join(UPLOAD_FOLDER, "latest.jpg")
+image_lock = Lock()
+
+@app.route("/upload", methods=["POST"])
+def upload_image():
+    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{UPLOAD_FOLDER}/img_{now}.jpg"
+    with open(filename, "wb") as f:
+        f.write(request.data)
+
+    # Save a copy as the latest image (for MJPEG/snapshot access)
+    with image_lock:
+        with open(latest_image_path, "wb") as f:
+            f.write(request.data)
+
+    # Upload to Google Drive
+    file_metadata = {
+        'name': os.path.basename(filename),
+        'parents': ['1yJi4rYgSek6pTMbjtxAgo8xCv-WUgewV']
+    }
+    media = MediaFileUpload(filename, mimetype='image/jpeg')
+    file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    print(f"Uploaded to Google Drive, File ID: {file.get('id')}")
+
+    return "OK", 200
+
+@app.route("/latest.jpg")
+def latest_image():
+    if os.path.exists(latest_image_path):
+        return send_file(latest_image_path, mimetype='image/jpeg')
+    return "No image yet", 404
+
+@app.route("/mjpeg")
+def mjpeg_stream():
+    def generate():
+        while True:
+            with image_lock:
+                if os.path.exists(latest_image_path):
+                    with open(latest_image_path, 'rb') as f:
+                        img_data = f.read()
+                else:
+                    continue
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + img_data + b'\r\n')
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.before_request
+def delete_old_files():
+    cutoff = datetime.now() - timedelta(days=3)
+    for fname in os.listdir(UPLOAD_FOLDER):
+        if fname == "latest.jpg":
+            continue
+        fpath = os.path.join(UPLOAD_FOLDER, fname)
+        if os.path.isfile(fpath):
+            ctime = datetime.fromtimestamp(os.path.getctime(fpath))
+            if ctime < cutoff:
+                os.remove(fpath)
+
+if _name_ == "_main_":
+    app.run(host='0.0.0.0', port=5001)}
+
