@@ -25,10 +25,8 @@ Sensors → ESP32 (ADC sampling, RMS calculation) → Wi-Fi → Blynk Cloud → 
 4. Upload `src/main.ino`
 
 ## Results
-![Dashboard](<img width="625" height="1037" alt="image" src="https://github.com/user-attachments/assets/faf2665d-f57f-403a-8149-395b29203ad8" />
-)
-![Hardware](<img width="1280" height="730" alt="WhatsApp Image 2026-08-02 at 10 33 02 AM" src="https://github.com/user-attachments/assets/a33c92dc-ee47-4107-8174-be5368648166" />
-)
+![Dashboard](images/dashboard.png)
+![Hardware](images/hardware.jpeg)
 
 
 *Developed Dec 2024 to May 2025 as my B.Tech final-year project.*
