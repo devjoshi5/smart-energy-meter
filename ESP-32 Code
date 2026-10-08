@@ -1,1 +1,154 @@
+// ESP32 Code - Smart Energy Meter with Flask Server Integration
+#define BLYNK_TEMPLATE_ID "TMPL3alDQYDzF"
+#define BLYNK_TEMPLATE_NAME "Smart Energy Meter"
+#define BLYNK_AUTH_TOKEN "qQzLDAG_HK3dTRFqAhO0R1rrpPtr5TBz"
+#define BLYNK_PRINT Serial
+
+#include <LiquidCrystal.h>
+#include "EmonLib.h"
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#include <HTTPClient.h>
+
+// LCD Configuration
+LiquidCrystal lcd(13, 12, 14, 27, 26, 25);
+
+// Energy Monitor Configuration
+EnergyMonitor emon;
+#define vCalibration 83.3
+#define currCalibration 0.50
+
+// WiFi and Blynk Configuration
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "JioFiber-8alfS_5G";  // Change to your WiFi SSID
+char pass[] = "devjoshi";         // Change to your WiFi password
+
+// Energy Metering Variables
+float kWh = 0;
+unsigned long lastmillis = millis();
+
+// Timer
+BlynkTimer timer;
+
+// Function to send data to Flask server
+void sendDataToServer() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    
+    // Replace with your Flask server IP address (keep port as 5000)
+    http.begin("http://192.168.29.42:5000/upload");
+    http.addHeader("Content-Type", "application/json");
+    
+    float cost = kWh * 9.0;
+    String payload = "{\"kwh\":" + String(kWh, 4) + ",\"cost\":" + String(cost, 2) + "}";
+    
+    int httpResponseCode = http.POST(payload);
+    
+    // Print HTTP response code for debugging
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+    
+    http.end();
+  } else {
+    Serial.println("WiFi not connected");
+  }
+}
+
+// Timer event function (called every minute)
+void myTimerEvent() {
+  // Calculate voltage and current
+  emon.calcVI(20, 2000);
+  
+  // Calculate energy consumption
+  kWh = kWh + emon.apparentPower * (millis() - lastmillis) / 3600000000.0;
+  yield();
+  
+  // Print data to serial monitor
+  Serial.print("Vrms: ");
+  Serial.print(emon.Vrms, 2);
+  Serial.print("V");
+  
+  Serial.print("\tIrms: ");
+  Serial.print(emon.Irms, 4);
+  Serial.print("A");
+  
+  Serial.print("\tPower: ");
+  Serial.print(emon.apparentPower, 4);
+  Serial.print("W");
+  
+  Serial.print("\tkWh: ");
+  Serial.print(kWh, 5);
+  Serial.println("kWh");
+  
+  // Calculate cost
+  float cost = kWh * 9.0;
+  
+  // Display first screen - Voltage and Current
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Vrms:");
+  lcd.print(emon.Vrms, 2);
+  lcd.print("V");
+  lcd.setCursor(0, 1);
+  lcd.print("Irms:");
+  lcd.print(emon.Irms, 4);
+  lcd.print("A");
+  delay(2500);
+  
+  // Display second screen - Power and Energy
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Power:");
+  lcd.print(emon.apparentPower, 4);
+  lcd.print("W");
+  lcd.setCursor(0, 1);
+  lcd.print("kWh:");
+  lcd.print(kWh, 4);
+  delay(2500);
+  
+  // Update last millis
+  lastmillis = millis();
+  
+  // Send data to Blynk
+  Blynk.virtualWrite(V0, emon.Vrms);
+  Blynk.virtualWrite(V1, emon.Irms);
+  Blynk.virtualWrite(V2, emon.apparentPower);
+  Blynk.virtualWrite(V3, kWh);
+  Blynk.virtualWrite(V4, cost);
+  
+  // Send data to Flask server
+  sendDataToServer();
+}
+
+void setup() {
+  // Initialize Serial
+  Serial.begin(115200);
+  
+  // Connect to Blynk
+  Blynk.begin(auth, ssid, pass);
+  
+  // Initialize LCD
+  lcd.begin(16, 2);
+  
+  // Initialize energy monitor
+  emon.voltage(35, vCalibration, 1.7); // Voltage: input pin, calibration, phase_shift
+  emon.current(34, currCalibration);   // Current: input pin, calibration
+  
+  // Display welcome message
+  lcd.setCursor(3, 0);
+  lcd.print("IoT Energy");
+  lcd.setCursor(5, 1);
+  lcd.print("Meter");
+  delay(3000);
+  lcd.clear();
+  
+  // Set timer interval to 1 minute (60000ms)
+  timer.setInterval(6000L, myTimerEvent);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
 
