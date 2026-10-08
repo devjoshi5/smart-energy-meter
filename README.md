@@ -1,4 +1,4 @@
-<img width="625" height="1037" alt="image" src="https://github.com/user-attachments/assets/c36b5643-c55a-431f-b7f2-dddf7f219c48" /># Smart Energy Meter ⚡
+# Smart Energy Meter ⚡
 
 IoT-based energy meter that measures voltage and current, computes power and consumption, and shows live data on a Blynk dashboard, with ESP32-CAM surveillance.
 
